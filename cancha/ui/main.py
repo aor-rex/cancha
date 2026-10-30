@@ -249,7 +249,7 @@ def main():
     if shot:
         def grab():
             win = engine.rootObjects()[0]
-            img = win.grabWindow()
+            img = app.primaryScreen().grabWindow(win.winId())
             img.save(shot)
             print("saved", shot)
             app.quit()

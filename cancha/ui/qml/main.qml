@@ -109,12 +109,12 @@ Window {
         // ---------- NAV ----------
         Row {
             id: navbar
+            x: 70; y: 20
             visible: bridge.view !== "match" && bridge.view !== "channels" && bridge.view !== "search"
             spacing: 28
             Repeater {
                 model: 5
                 delegate: Text {
-                    y: 20; x: index === 0 ? 70 : 0
                     text: root.navLabels[index]
                     color: (root.row === 0 && root.col === index) ? "#f5c518" : (bridge.view === root.navItems[index] ? "white" : "#777")
                     font.pixelSize: 17; font.bold: true
@@ -139,7 +139,7 @@ Window {
             anchors.fill: parent
             anchors.topMargin: 56
             visible: bridge.view === "home"
-            spacing: 0
+            spacing: 16
 
             Rectangle {
                 width: parent.width; height: 280
@@ -147,9 +147,9 @@ Window {
                 Row {
                     anchors.centerIn: parent
                     spacing: 60
-                    opacity: 0.3
+                    opacity: 0.45
                     Image { width: 170; height: 170; fillMode: Image.PreserveAspectFit; source: bridge.hero.flagA || "" }
-                    Image { width: 170; height: 170; fillMode: Image.PreserveAspectFit; source: bridge.hero.flagB || "" }
+                    Image { width: 170; height: 170; fillMode: Image.PreserveAspectFit; source: bridge.hero.flagB || ""; visible: (bridge.hero.flagB || "") !== (bridge.hero.flagA || "") }
                 }
                 Column {
                     anchors.left: parent.left; anchors.right: parent.right
@@ -162,13 +162,22 @@ Window {
                 }
             }
 
-            Row {
+            ListView {
+                x: 70
+                width: parent.width - 70; height: 50
+                clip: true
+                orientation: ListView.Horizontal
                 spacing: 12
-                Repeater {
-                    model: bridge.filters
-                    delegate: Rectangle {
+                model: bridge.filters
+                currentIndex: root.col
+                highlightRangeMode: ListView.ApplyRange
+                preferredHighlightBegin: 0; preferredHighlightEnd: 900
+                highlight: Item {}
+                delegate: Item {
+                    width: pillRect.width; height: 50
+                    Rectangle {
+                        id: pillRect
                         width: pillText.width + 44; height: 50
-                        y: 16; x: index === 0 ? 70 : 0
                         color: root.row === 1 && root.col === index ? "#f5c518" : "#141821"
                         radius: 8
                         Text {
@@ -198,32 +207,36 @@ Window {
                         color: "white"; font.pixelSize: 19; font.bold: true
                     }
                     Row {
+                        x: 70
                         spacing: 16
                         Repeater {
                             model: modelData.events.slice(0, 4)
-                            delegate: Column {
-                                width: 340
-                                spacing: 6
-                                Rectangle {
-                                    width: 340; height: 140
-                                    color: "#1a2030"; radius: 6
-                                    border.color: "#f5c518"; border.width: (root.row === railNum + 1 && root.col === index) ? 4 : 0
-                                    Row {
-                                        anchors.centerIn: parent
-                                        spacing: 24
-                                        Image { width: 68; height: 68; fillMode: Image.PreserveAspectFit; source: modelData.flagA || "" }
-                                        Image { width: 68; height: 68; fillMode: Image.PreserveAspectFit; source: modelData.flagB || "" }
-                                    }
+                            delegate: Item {
+                                width: 340; height: 190
+                                Column {
+                                    spacing: 6
                                     Rectangle {
-                                        x: 8; y: 8; width: badgeText.width + 20; height: 26
-                                        color: "white"; radius: 3
-                                        Text { id: badgeText; anchors.centerIn: parent; text: modelData.badge || ""; color: "black"; font.pixelSize: 12; font.bold: true }
+                                        width: 340; height: 140
+                                        color: "#1a2030"; radius: 6
+                                        border.color: "#f5c518"; border.width: (root.row === railNum + 1 && root.col === index) ? 4 : 0
+                                        Row {
+                                            anchors.centerIn: parent
+                                            spacing: 24
+                                            Image { width: 68; height: 68; fillMode: Image.PreserveAspectFit; source: modelData.flagA || "" }
+                                            Image { width: 68; height: 68; fillMode: Image.PreserveAspectFit; source: modelData.flagB || "" }
+                                        }
+                                        Rectangle {
+                                            x: 8; y: 8; width: badgeText.width + 20; height: 26
+                                            color: "white"; radius: 3
+                                            Text { id: badgeText; anchors.centerIn: parent; text: modelData.badge || ""; color: "black"; font.pixelSize: 12; font.bold: true }
+                                        }
                                     }
+                                    Text { text: (modelData.title || "").toUpperCase(); color: "white"; font.pixelSize: 15; font.bold: true; elide: Text.ElideRight; width: 340 }
+                                    Text { text: (modelData.sub || "") + " · " + (modelData.count || ""); color: "#999"; font.pixelSize: 13 }
                                 }
-                                Text { text: (modelData.title || "").toUpperCase(); color: "white"; font.pixelSize: 15; font.bold: true; elide: Text.ElideRight; width: 340 }
-                                Text { text: (modelData.sub || "") + " · " + (modelData.count || ""); color: "#999"; font.pixelSize: 13 }
                                 MouseArea {
-                                    anchors.fill: parent; hoverEnabled: true
+                                    anchors.fill: parent
+                                    hoverEnabled: true
                                     onEntered: { root.row = railNum + 1; root.col = index }
                                     onClicked: bridge.openMatch(modelData.id)
                                 }
@@ -240,14 +253,23 @@ Window {
             anchors.fill: parent
             anchors.topMargin: 56
             visible: bridge.view === "sports"
-            spacing: 0
-            Row {
+            spacing: 16
+            ListView {
+                x: 70
+                width: parent.width - 70; height: 50
+                clip: true
+                orientation: ListView.Horizontal
                 spacing: 12
-                Repeater {
-                    model: bridge.filters
-                    delegate: Rectangle {
+                model: bridge.filters
+                currentIndex: root.col
+                highlightRangeMode: ListView.ApplyRange
+                preferredHighlightBegin: 0; preferredHighlightEnd: 900
+                highlight: Item {}
+                delegate: Item {
+                    width: pillRect2.width; height: 50
+                    Rectangle {
+                        id: pillRect2
                         width: pillText2.width + 44; height: 50
-                        y: 16; x: index === 0 ? 70 : 0
                         color: root.row === 1 && root.col === index ? "#f5c518" : "#141821"
                         radius: 8
                         Text {
@@ -272,32 +294,36 @@ Window {
                     spacing: 8
                     Text { x: 70; text: (modelData.title || "").toUpperCase(); color: "white"; font.pixelSize: 19; font.bold: true }
                     Row {
+                        x: 70
                         spacing: 16
                         Repeater {
                             model: modelData.events.slice(0, 4)
-                            delegate: Column {
-                                width: 340
-                                spacing: 6
-                                Rectangle {
-                                    width: 340; height: 130
-                                    color: "#1a2030"; radius: 6
-                                    border.color: "#f5c518"; border.width: (root.row === railNum + 1 && root.col === index) ? 4 : 0
-                                    Row {
-                                        anchors.centerIn: parent
-                                        spacing: 24
-                                        Image { width: 64; height: 64; fillMode: Image.PreserveAspectFit; source: modelData.flagA || "" }
-                                        Image { width: 64; height: 64; fillMode: Image.PreserveAspectFit; source: modelData.flagB || "" }
-                                    }
+                            delegate: Item {
+                                width: 340; height: 180
+                                Column {
+                                    spacing: 6
                                     Rectangle {
-                                        x: 8; y: 8; width: badgeText2.width + 20; height: 26
-                                        color: "white"; radius: 3
-                                        Text { id: badgeText2; anchors.centerIn: parent; text: modelData.badge || ""; color: "black"; font.pixelSize: 12; font.bold: true }
+                                        width: 340; height: 130
+                                        color: "#1a2030"; radius: 6
+                                        border.color: "#f5c518"; border.width: (root.row === railNum + 1 && root.col === index) ? 4 : 0
+                                        Row {
+                                            anchors.centerIn: parent
+                                            spacing: 24
+                                            Image { width: 64; height: 64; fillMode: Image.PreserveAspectFit; source: modelData.flagA || "" }
+                                            Image { width: 64; height: 64; fillMode: Image.PreserveAspectFit; source: modelData.flagB || "" }
+                                        }
+                                        Rectangle {
+                                            x: 8; y: 8; width: badgeText2.width + 20; height: 26
+                                            color: "white"; radius: 3
+                                            Text { id: badgeText2; anchors.centerIn: parent; text: modelData.badge || ""; color: "black"; font.pixelSize: 12; font.bold: true }
+                                        }
                                     }
+                                    Text { text: (modelData.title || "").toUpperCase(); color: "white"; font.pixelSize: 15; font.bold: true; elide: Text.ElideRight; width: 340 }
+                                    Text { text: (modelData.sub || "") + " · " + (modelData.count || ""); color: "#999"; font.pixelSize: 13 }
                                 }
-                                Text { text: (modelData.title || "").toUpperCase(); color: "white"; font.pixelSize: 15; font.bold: true; elide: Text.ElideRight; width: 340 }
-                                Text { text: (modelData.sub || "") + " · " + (modelData.count || ""); color: "#999"; font.pixelSize: 13 }
                                 MouseArea {
-                                    anchors.fill: parent; hoverEnabled: true
+                                    anchors.fill: parent
+                                    hoverEnabled: true
                                     onEntered: { root.row = railNum + 1; root.col = index }
                                     onClicked: bridge.openMatch(modelData.id)
                                 }
@@ -375,8 +401,8 @@ Window {
                             anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter
                             anchors.leftMargin: 24
                             spacing: 16
-                            Image { width: 40; height: 40; fillMode: Image.PreserveAspectFit; source: modelData.image || ""; anchors.verticalCenter: parent.verticalCenter }
-                            Text { text: modelData.title; color: "white"; font.pixelSize: 17; font.bold: true; anchors.verticalCenter: parent.verticalCenter }
+                            Image { width: 40; height: 40; fillMode: Image.PreserveAspectFit; source: modelData.image || "" }
+                            Text { text: modelData.title; color: "white"; font.pixelSize: 17; font.bold: true }
                         }
                         Text {
                             anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
