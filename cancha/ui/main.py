@@ -5,6 +5,7 @@ from PySide6.QtGui import QGuiApplication
 from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtCore import QTimer, QUrl
 
+from cancha.api import cache
 from cancha.api import favorites as fav
 from cancha.api.client import Client
 from cancha.ui.bridge import Bridge
@@ -35,8 +36,15 @@ class App:
 
     # ----- data -----
     def load(self, keep_view=True):
-        self.client.refresh_events()
-        self.client.refresh_categories()
+        try:
+            self.client.refresh_events()
+            self.client.refresh_categories()
+            self.bridge._set("stale", False)
+            self._push_events()
+        except Exception as ex:
+            if not self._restore_cache():
+                self.bridge._set("status", f"offline and no saved data: {ex}"[:120])
+            return
         try:
             self.client.refresh_providers()
         except Exception:
@@ -45,12 +53,6 @@ class App:
             self.reels = self.client.highlights_index()
         except Exception:
             self.reels = []
-        self.bridge._set("filters", build_filters(self.client.events))
-        self.apply_filter(0)
-        evs = self.client.events
-        live = [e for e in evs if e.servers]
-        first = live[0] if live else (evs[0] if evs else None)
-        self.bridge._set("hero", event_dict(first) if first else {})
         self.bridge._set("providers", [
             {"name": p.name, "ref": p.ref, "playlist": p.is_playlist}
             for p in self.client.providers
@@ -59,7 +61,39 @@ class App:
             {"id": r.id, "title": r.title or "Untitled", "logo": r.logo}
             for r in self.reels
         ])
+        self._save_cache()
+
+    def _push_events(self):
+        self.bridge._set("filters", build_filters(self.client.events))
+        self.apply_filter(0)
+        evs = self.client.events
+        live = [e for e in evs if e.servers]
+        first = live[0] if live else (evs[0] if evs else None)
+        self.bridge._set("hero", event_dict(first) if first else {})
         self._push_favorites()
+
+    def _snapshot(self):
+        return {
+            "filters": self.bridge._get("filters"),
+            "rails": self.bridge._get("rails"),
+            "hero": self.bridge._get("hero"),
+            "providers": self.bridge._get("providers"),
+            "reels": self.bridge._get("reels"),
+            "favrail": self.bridge._get("favrail"),
+        }
+
+    def _save_cache(self):
+        cache.save("home", self._snapshot())
+
+    def _restore_cache(self):
+        snap = cache.load("home")
+        if not snap:
+            return False
+        for k, v in snap.items():
+            self.bridge._set(k, v)
+        self.bridge._set("stale", True)
+        self.bridge._set("status", "offline — showing last saved data")
+        return True
 
     def _push_favorites(self):
         starred = [e for e in self.client.events if fav.matches(e, self.favs)]

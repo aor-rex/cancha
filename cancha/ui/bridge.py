@@ -20,6 +20,7 @@ class Bridge(QObject):
         self._results = []
         self._favrail = []
         self._matchstar = "☆"
+        self._stale = False
 
     def _get(self, name):
         return getattr(self, "_" + name)
@@ -41,6 +42,7 @@ class Bridge(QObject):
     favrail = Property("QVariant", lambda s: s._get("favrail"), notify=refreshed)
     matchstar = Property(str, lambda s: s._get("matchstar"), notify=refreshed)
     status = Property(str, lambda s: s._get("status"), lambda s, v: s._set("status", v), notify=refreshed)
+    stale = Property(bool, lambda s: s._get("stale"), lambda s, v: s._set("stale", v), notify=refreshed)
 
     # slots wired by main.py
     on_open_match = None
