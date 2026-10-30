@@ -35,3 +35,38 @@ def build_rails(events, filt="All"):
 
 def build_filters(events):
     return ["All"] + sorted({e.category for e in events if e.category})
+
+
+def parse_m3u(text):
+    """Parse an m3u playlist -> [{'title', 'logo', 'group', 'url'}]."""
+    out = []
+    title, logo, group = "", "", ""
+    for line in (text or "").splitlines():
+        line = line.strip()
+        if line.startswith("#EXTINF"):
+            title = line.rsplit(",", 1)[-1].strip() if "," in line else ""
+            logo, group = "", ""
+            for key in ('tvg-logo="', 'group-title="'):
+                if key in line:
+                    val = line.split(key, 1)[1].split('"', 1)[0]
+                    if "logo" in key:
+                        logo = val
+                    else:
+                        group = val
+        elif line and not line.startswith("#"):
+            if title or True:
+                out.append({"title": title or line.rsplit("/", 1)[-1],
+                            "logo": logo, "group": group, "url": line})
+            title, logo, group = "", "", ""
+    return out
+
+
+def search_events(events, query):
+    q = (query or "").strip().lower()
+    if not q:
+        return []
+    return [e for e in events
+            if q in (e.title or "").lower()
+            or q in (e.team_a or "").lower()
+            or q in (e.team_b or "").lower()
+            or q in (e.category or "").lower()]

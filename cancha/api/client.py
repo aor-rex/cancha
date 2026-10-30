@@ -50,6 +50,25 @@ class Reel:
     url: str = ""
 
 
+@dataclass
+class Provider:
+    name: str
+    ref: str = ""
+    image: str = ""
+
+    @property
+    def is_playlist(self):
+        return self.ref.lower().endswith(".m3u")
+
+
+@dataclass
+class Channel:
+    id: str
+    title: str
+    image: str = ""
+    category: str = ""
+
+
 def _split_link(link):
     """'url|header1=a|header2=b' -> (url, {headers})."""
     parts = (link or "").split("|")
@@ -83,6 +102,7 @@ class Client:
         self.host = self.hosts[0]
         self.events = []
         self.categories = []
+        self.providers = []
         self.fetched_at = 0.0
 
     def _foreach_host(self, path):
@@ -141,9 +161,9 @@ class Client:
         ]
         return self.categories
 
-    def channels_for(self, event_id):
-        items = self._as_list(
-            self._foreach_host(f"channels/{event_id}.json"), "channels", "data")
+    def servers_for(self, path):
+        """Any channels/{...}.json or highlights/{...}.json -> [Server]."""
+        items = self._as_list(self._foreach_host(path), "channels", "data")
         out = []
         for c in items:
             url, headers = _split_link(c.get("link", ""))
@@ -155,6 +175,55 @@ class Client:
                 kind=c.get("type", ""),
             ))
         return [s for s in out if s.url]
+
+    def channels_for(self, event_id):
+        return self.servers_for(f"channels/{event_id}.json")
+
+    def reel_servers(self, reel_id):
+        return self.servers_for(f"highlights/{reel_id}.json")
+
+    def refresh_providers(self):
+        items = self._as_list(self._foreach_host("cats.json"), "cats", "data")
+        out = []
+        for p in items:
+            if not isinstance(p, dict):
+                continue
+            out.append(Provider(
+                name=p.get("title", "provider"),
+                ref=p.get("catLink", ""),
+                image="" if p.get("image") in (None, "nullbsbbs") else p.get("image", ""),
+            ))
+        self.providers = out
+        return out
+
+    def provider_channels(self, ref):
+        """cats/{ref}.json -> [Channel]. m3u refs handled by parse at UI layer."""
+        items = self._as_list(self._foreach_host(f"cats/{ref}.json"),
+                              "channels", "data")
+        out = []
+        for c in items:
+            if not isinstance(c, dict):
+                continue
+            fmts = c.get("formatsNew", []) or []
+            out.append(Channel(
+                id=str(c.get("id", "")),
+                title=c.get("title", "channel"),
+                image=c.get("image", "") if c.get("image") != "nullbsbbs" else "",
+                category=c.get("cat", ""),
+            ))
+        return out
+
+    def fetch_playlist(self, url):
+        last = None
+        for h in ([""] + self.hosts):
+            try:
+                base = url if url.startswith("http") else h + url
+                r = self.session.get(base, headers=UA, timeout=20)
+                r.raise_for_status()
+                return r.text
+            except Exception as e:
+                last = e
+        raise RuntimeError(f"playlist failed: {last}")
 
     def highlights_index(self):
         items = self._as_list(
