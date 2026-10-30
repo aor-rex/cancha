@@ -1,0 +1,49 @@
+name: dev build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: system libs
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -qy libmpv2 libegl1 libxkbcommon0 libdbus-1-3
+
+      - name: install
+        run: |
+          pip install -e ".[dev]"
+          pip install pyinstaller
+
+      - name: test
+        run: pytest -q
+
+      - name: bundle
+        run: |
+          LIBMPV=$(ldconfig -p | grep -m1 "libmpv.so.1 " | awk '{print $NF}')
+          echo "libmpv: $LIBMPV"
+          pyinstaller --noconfirm --onedir --name cancha \
+            --hidden-import mpv \
+            --add-data "cancha/ui/qml:cancha/ui/qml" \
+            ${LIBMPV:+--add-binary "$LIBMPV:."} \
+            cancha/__main__.py
+
+      - name: smoke
+        run: |
+          QT_QPA_PLATFORM=offscreen ./dist/cancha/cancha --shot /tmp/smoke.png --shot-go sports
+          ls -la /tmp/smoke.png
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cancha-dev-linux
+          path: dist/cancha/
