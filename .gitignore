@@ -5,3 +5,4 @@ dist/
 build/
 *.egg-info/
 .pytest_cache/
+cancha/api/_build_key.py

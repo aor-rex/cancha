@@ -2,15 +2,25 @@
 
 Public-repo safe: the firebase key is NEVER committed. Provide it via:
   1. env var CANCHA_FIREBASE_KEY, or
-  2. {"firebase_key": "..."} in ~/.config/cancha/config.json
-Without it, remote config is skipped and last-known hosts are used.
-CI builds take it from the CANCHA_FIREBASE_KEY repo secret."""
+  2. {"firebase_key": "..."} in ~/.config/cancha/config.json, or
+  3. bundled at build time from the CANCHA_FIREBASE_KEY repo secret
+     (CI writes cancha/api/_build_key.py, gitignored, before bundling).
+Without it, remote config is skipped and last-known hosts are used."""
+
 import json
 import os
 import uuid
 from pathlib import Path
 
 import requests
+
+
+def _bundled_key():
+    try:
+        from cancha.api._build_key import FIREBASE_KEY
+        return (FIREBASE_KEY or "").strip()
+    except Exception:
+        return ""
 
 
 def _firebase_key():
@@ -23,7 +33,7 @@ def _firebase_key():
             return json.loads(cfg.read_text()).get("firebase_key", "").strip()
         except Exception:
             return ""
-    return ""
+    return _bundled_key()
 
 FIREBASE_API_KEY = _firebase_key()
 PROJECT_NUMBER = "234785582029"

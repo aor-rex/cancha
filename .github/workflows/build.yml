@@ -31,6 +31,17 @@ jobs:
       - name: test
         run: pytest -q
 
+      - name: bundled key
+        env:
+          BUNDLE_KEY: ${{ secrets.CANCHA_FIREBASE_KEY }}
+        run: |
+          if [ -n "$BUNDLE_KEY" ]; then
+            printf 'FIREBASE_KEY = "%s"\n' "$BUNDLE_KEY" > cancha/api/_build_key.py
+            echo "bundled key present"
+          else
+            echo "no secret set — build runs keyless"
+          fi
+
       - name: bundle
         run: |
           LIBMPV=$(ldconfig -p | grep -m1 "libmpv.so.1 " | awk '{print $NF}')
