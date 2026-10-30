@@ -33,6 +33,12 @@ Window {
     }
     function navGo(i) { bridge.go(navItems[i]) }
 
+    onLrowChanged: if (provList) provList.positionViewAtIndex(lrow, ListView.Contain)
+    onCrowChanged: if (chanList) chanList.positionViewAtIndex(crow, ListView.Contain)
+    onHrowChanged: if (reelList) reelList.positionViewAtIndex(hrow, ListView.Contain)
+    onSrowChanged: if (resList) resList.positionViewAtIndex(srow, ListView.Contain)
+    onMrowChanged: if (srvList && mrow > 0) srvList.positionViewAtIndex(mrow - 1, ListView.Contain)
+
     Timer {
         interval: 10000; running: true; repeat: true
         onTriggered: { if (!dimmed && lastAct > 0 && Date.now() - lastAct > 600000) dimmed = true }
@@ -342,18 +348,16 @@ Window {
             spacing: 14
             Text { x: 70; text: "PROVIDERS — " + bridge.providers.length + " NETWORKS, PICK ONE"; color: "white"; font.pixelSize: 19; font.bold: true }
             ListView {
+                id: provList
                 x: 70; width: 1050; height: 620
                 model: bridge.providers
-                currentIndex: root.row === 0 ? -1 : root.lrow
-                highlightFollowsCurrentItem: true
-                preferredHighlightBegin: 250; preferredHighlightEnd: 400
-                highlightRangeMode: ListView.ApplyRange
-                highlight: Rectangle { width: 1050; height: 66; color: "transparent"; border.color: "#f5c518"; border.width: 4; radius: 8 }
+                currentIndex: root.lrow
                 delegate: Item {
                     width: 1050; height: 66
                     Rectangle {
                         anchors.fill: parent; anchors.margins: 4
                         color: "#141821"; radius: 6
+                        border.color: "#f5c518"; border.width: root.lrow === index && root.row !== 0 ? 4 : 0
                         Text {
                             anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter
                             anchors.leftMargin: 24
@@ -385,18 +389,16 @@ Window {
             spacing: 14
             Text { x: 70; text: "CHANNELS — OK PLAYS INSTANTLY"; color: "white"; font.pixelSize: 19; font.bold: true }
             ListView {
+                id: chanList
                 x: 70; width: 1050; height: 640
                 model: bridge.channels
                 currentIndex: root.crow
-                highlightFollowsCurrentItem: true
-                preferredHighlightBegin: 250; preferredHighlightEnd: 400
-                highlightRangeMode: ListView.ApplyRange
-                highlight: Rectangle { width: 1050; height: 66; color: "transparent"; border.color: "#f5c518"; border.width: 4; radius: 8 }
                 delegate: Item {
                     width: 1050; height: 66
                     Rectangle {
                         anchors.fill: parent; anchors.margins: 4
                         color: "#141821"; radius: 6
+                        border.color: "#f5c518"; border.width: root.crow === index ? 4 : 0
                         Row {
                             anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter
                             anchors.leftMargin: 24
@@ -429,18 +431,16 @@ Window {
             spacing: 14
             Text { x: 70; text: "HIGHLIGHTS & REELS — OK PLAYS"; color: "white"; font.pixelSize: 19; font.bold: true }
             ListView {
+                id: reelList
                 x: 70; width: 1050; height: 620
                 model: bridge.reels
-                currentIndex: root.row === 0 ? -1 : root.hrow
-                highlightFollowsCurrentItem: true
-                preferredHighlightBegin: 250; preferredHighlightEnd: 400
-                highlightRangeMode: ListView.ApplyRange
-                highlight: Rectangle { width: 1050; height: 66; color: "transparent"; border.color: "#f5c518"; border.width: 4; radius: 8 }
+                currentIndex: root.hrow
                 delegate: Item {
                     width: 1050; height: 66
                     Rectangle {
                         anchors.fill: parent; anchors.margins: 4
                         color: "#141821"; radius: 6
+                        border.color: "#f5c518"; border.width: root.hrow === index && root.row !== 0 ? 4 : 0
                         Text {
                             anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter
                             anchors.leftMargin: 24
@@ -485,18 +485,16 @@ Window {
                 }
             }
             ListView {
+                id: resList
                 x: 70; width: 1050; height: 560
                 model: bridge.results
                 currentIndex: root.srow
-                highlightFollowsCurrentItem: true
-                preferredHighlightBegin: 250; preferredHighlightEnd: 400
-                highlightRangeMode: ListView.ApplyRange
-                highlight: Rectangle { width: 1050; height: 66; color: "transparent"; border.color: "#f5c518"; border.width: 4; radius: 8 }
                 delegate: Item {
                     width: 1050; height: 66
                     Rectangle {
                         anchors.fill: parent; anchors.margins: 4
                         color: "#141821"; radius: 6
+                        border.color: "#f5c518"; border.width: root.srow === index ? 4 : 0
                         Text {
                             anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter
                             anchors.leftMargin: 24
@@ -535,7 +533,7 @@ Window {
                 Text {
                     anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter
                     anchors.leftMargin: 24
-                    text: bridge.matchstar + "  Favorite this team (F)"
+                    text: bridge.matchstar + "  Favorite (F)"
                     color: "white"; font.pixelSize: 16; font.bold: true
                 }
                 MouseArea {
@@ -546,16 +544,16 @@ Window {
             }
             Text { x: 70; text: "SERVERS — PICK ONE, PLAYBACK STARTS INSTANTLY"; color: "white"; font.pixelSize: 18; font.bold: true }
             ListView {
-                x: 70; width: 1050; height: 380
+                id: srvList
+                x: 70; width: 1050; height: 320
                 model: bridge.servers
-                currentIndex: root.mrow > 0 ? root.mrow - 1 : -1
-                highlightFollowsCurrentItem: true
-                highlight: Rectangle { width: 1050; height: 68; color: "transparent"; border.color: "#f5c518"; border.width: 4; radius: 8 }
+                currentIndex: root.mrow > 0 ? root.mrow - 1 : 0
                 delegate: Item {
                     width: 1050; height: 68
                     Rectangle {
                         anchors.fill: parent; anchors.margins: 4
                         color: "#141821"; radius: 6
+                        border.color: "#f5c518"; border.width: root.mrow === index + 1 ? 4 : 0
                         Text {
                             anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter
                             anchors.leftMargin: 24

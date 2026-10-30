@@ -10,7 +10,7 @@ from cancha.api import favorites as fav
 from cancha.api.client import Client
 from cancha.ui.bridge import Bridge
 from cancha.ui.data import (build_filters, build_rails, event_dict, parse_m3u,
-                            search_events)
+                            quality_tag, search_events)
 
 REFRESH_MS = 3 * 60 * 1000
 
@@ -127,8 +127,7 @@ class App:
             self.bridge._set("status", f"source unavailable: {ex}"[:120])
             servers = []
         self.bridge._set("servers", [
-            {"title": s.title, "note": " · ".join(
-                [p for p in [s.kind, next(iter(s.headers.values()), "")] if p])[:60]}
+            {"title": s.title, "note": quality_tag(s.title, s.kind)}
             for s in servers
         ])
         self.bridge._set("view", "match")
@@ -229,8 +228,11 @@ class App:
 
 def main():
     shot = None
+    shot_go = None
     if "--shot" in sys.argv:
         shot = sys.argv[sys.argv.index("--shot") + 1]
+    if "--shot-go" in sys.argv:
+        shot_go = sys.argv[sys.argv.index("--shot-go") + 1]
     app = QGuiApplication(sys.argv)
     core = App(shot=bool(shot))
     try:
@@ -247,13 +249,35 @@ def main():
     timer.timeout.connect(lambda: core.load())
     timer.start(REFRESH_MS)
     if shot:
+        delay = 9000
+        if shot_go:
+            try:
+                if shot_go == "match":
+                    evs = core.client.events
+                    if evs:
+                        core.open_match(evs[0].id)
+                elif shot_go == "channels":
+                    provs = core.client.providers
+                    hub = next((p for p in provs if not p.ref.lower().endswith(".m3u")), None)
+                    if hub:
+                        core.open_provider(hub.ref)
+                    elif provs:
+                        core.open_provider(provs[0].ref)
+                elif shot_go.startswith("search:"):
+                    core.search(shot_go.split(":", 1)[1])
+                    core.bridge._set("view", "search")
+                elif shot_go in ("sports", "livetv", "highlights", "home"):
+                    core.bridge._set("view", shot_go)
+                delay = 15000
+            except Exception as ex:
+                print("shot-go failed:", ex)
         def grab():
             win = engine.rootObjects()[0]
             img = app.primaryScreen().grabWindow(win.winId())
             img.save(shot)
             print("saved", shot)
             app.quit()
-        QTimer.singleShot(9000, grab)
+        QTimer.singleShot(delay, grab)
     return app.exec()
 
 

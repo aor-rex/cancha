@@ -70,3 +70,14 @@ def search_events(events, query):
             or q in (e.team_a or "").lower()
             or q in (e.team_b or "").lower()
             or q in (e.category or "").lower()]
+
+
+def quality_tag(title, kind=""):
+    """Short clean badge for a server row: FHD/HD/SD/4K from the title,
+    else the stream kind. Never leaks headers or user-agents."""
+    t = (title or "").upper()
+    for q in ("4K", "UHD", "FULLHD", "FHD", " HD", "HD", "SD"):
+        if q.strip() and q in t:
+            return "FHD" if q == "FULLHD" else q.strip()
+    k = (kind or "").upper()[:12]
+    return "" if k.isdigit() else k
