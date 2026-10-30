@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Cancha
+Comment=TV-first sports streaming client
+Exec=cancha
+Icon=icon
+Categories=AudioVideo;Video;

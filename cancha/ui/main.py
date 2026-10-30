@@ -1,5 +1,14 @@
 """Cancha UI entry: QML shell over the API client. Usage: python -m cancha.ui.main [--shot out.png]"""
+import os
 import sys
+
+
+def qml_url():
+    base = getattr(sys, "_MEIPASS", None)
+    if base:
+        return QUrl.fromLocalFile(os.path.join(base, "cancha", "ui", "qml", "main.qml"))
+    here = os.path.dirname(os.path.abspath(__file__))
+    return QUrl.fromLocalFile(os.path.join(here, "qml", "main.qml"))
 
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtQml import QQmlApplicationEngine
@@ -241,7 +250,7 @@ def main():
         print("load failed:", ex)
     engine = QQmlApplicationEngine()
     engine.rootContext().setContextProperty("bridge", core.bridge)
-    engine.load(QUrl.fromLocalFile("cancha/ui/qml/main.qml"))
+    engine.load(qml_url())
     if not engine.rootObjects():
         print("qml errors — aborting")
         return 1
